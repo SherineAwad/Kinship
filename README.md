@@ -3,7 +3,7 @@
 
 Author: Sherine Awad 
 
-A snakefile pipeline for a quick test of relatedness and Runs of Homozygosity (ROH)
+A snakemake pipeline for a quick test of relatedness and Runs of Homozygosity (ROH)
 =======================================================================================
 
 
