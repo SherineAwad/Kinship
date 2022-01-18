@@ -13,7 +13,8 @@ rule all:
            expand("{sample}.vcf.gz", sample=SAMPLES), 
            expand("{sample}.vcf.gz.tbi", sample=SAMPLES), 
            expand("{all}.vcf.gz", all = config['ALL']), 
-           expand("{sample}.stats", sample=SAMPLES)
+           expand("{sample}.stats", sample=SAMPLES),
+           expand("{sample}.validated", sample=SAMPLES)
 rule bgzip:       
      input:
         "{sample}.vcf"
@@ -91,4 +92,16 @@ rule stats:
    shell: 
       """ 
       vcf-stats {input} > {output} 
-      """  
+      """
+
+
+rule validate:
+   input:
+        "{sample}.vcf.gz"
+   output:
+        "{sample}.validated"
+   shell:
+      """
+      vcf-validator {input} > {output}
+      """
+
