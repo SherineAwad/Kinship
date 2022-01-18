@@ -75,7 +75,7 @@ rule ROH:
         """
 rule merge: 
     input: 
-        vcf = expand("{sample}.vcf", sample=SAMPLES) 
+        vcf = expand("{sample}.vcf.gz", sample=SAMPLES) 
     output:
         expand("{all}.vcf.gz", all = config['ALL'])
     shell: 
