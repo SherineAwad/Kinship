@@ -24,10 +24,10 @@ rule bgzip:
          """
 
 rule tabix:
-    input:
-        vcf = expand("{sample}.vcf", sample=SAMPLES)
+     input:
+        vcf = expand("{sample}.vcf.gz", sample=SAMPLES)
      output:
-       expand("{sample}.vcf.gz.tbi", sample=SAMPLES)
+        expand("{sample}.vcf.gz.tbi", sample=SAMPLES)
      shell:
          """
          tabix -p vcf {input}
