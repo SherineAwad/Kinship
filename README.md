@@ -3,9 +3,10 @@
 
 Author: Sherine Awad 
 
-A very quick test of relatedness and Runs of Homozygosity (ROH)
+VCF ToolBox  
 =======================================================================================
 
+This is a vcf toolbox for multiple things/commands to do with vcf. Like index, bgzip, merge, split, quick check for relatedness, Runs of Homozygozity (ROH), etc. 
 
 Change the config.yaml file appropriately according to your data. 
 Update samples.tsv to include your samples. You can edit config file to change this name.  
@@ -27,3 +28,9 @@ and to print the commands in a dry run use:
 For the sake reproducibility, use conda to pull same versions of tools. Snakemake and conda have to be installed in your system:
 
     snakemake --cores --use-conda
+
+### TODO 
+
+Add everyday quick things we need to do with a VCF occasionally.
+
+

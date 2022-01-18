@@ -9,7 +9,30 @@ rule all:
       input:
            "out.relatedness",
            "out.relatedness2",
-           expand("{sample}.roh", sample=SAMPLES)
+           expand("{sample}.roh", sample=SAMPLES), 
+           expand("{sample}.vcf.gz", sample=SAMPLES), 
+           expand("{sample}.vcf.gz.tbi", sample=SAMPLES)
+
+rule bgzip:       
+     input:
+        vcf = expand("{sample}.vcf", sample=SAMPLES)
+     output:
+       expand("{sample}.vcf.gz", sample=SAMPLES)
+     shell:
+         """
+         bgzip -c {input} > {output}
+         """
+
+rule tabix:
+    input:
+        vcf = expand("{sample}.vcf", sample=SAMPLES)
+     output:
+       expand("{sample}.vcf.gz.tbi", sample=SAMPLES)
+     shell:
+         """
+         tabix -p vcf {input}
+         """
+
 rule relatedness: 
      input: 
         vcf = expand("{sample}.vcf", sample=SAMPLES)
