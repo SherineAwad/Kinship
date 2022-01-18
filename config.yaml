@@ -9,4 +9,5 @@ ANNOVAR: /rds/project/yhbl2/rds-yhbl2-genehunter/SM/tools/annovar
 humanDB : /rds/project/yhbl2/rds-yhbl2-genehunter/SM/tools/annovar/humandb
 annovar_prefix: "hg38_multianno"
 version : hg38
-
+AF: 0.4 
+G: 30 
