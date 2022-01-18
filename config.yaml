@@ -1,13 +1,4 @@
 SAMPLES : samples.tsv 
-PAIRED: TRUE 
-GENOME: "Homo_sapiens_assembly38"
-
-RG: "A00489_467.HT3G5DMXX.s_2"
-ALL_VCF: "all"
-
-ANNOVAR: /rds/project/yhbl2/rds-yhbl2-genehunter/SM/tools/annovar 
-humanDB : /rds/project/yhbl2/rds-yhbl2-genehunter/SM/tools/annovar/humandb
-annovar_prefix: "hg38_multianno"
-version : hg38
+ALL: all
 AF: 0.4 
 G: 30 

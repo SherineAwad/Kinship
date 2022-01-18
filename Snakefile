@@ -7,17 +7,18 @@ print(SAMPLES)
 
 rule all:
       input:
-           "out.relatedness",
-           "out.relatedness2",
+           expand("{sample}.relatedness",sample=SAMPLES),
+           expand("{sample}.relatedness2", sample=SAMPLES),
            expand("{sample}.roh", sample=SAMPLES), 
            expand("{sample}.vcf.gz", sample=SAMPLES), 
-           expand("{sample}.vcf.gz.tbi", sample=SAMPLES)
+           expand("{sample}.vcf.gz.tbi", sample=SAMPLES), 
+           expand("{all}.vcf.gz", all = config['ALL'])
 
 rule bgzip:       
      input:
-        vcf = expand("{sample}.vcf", sample=SAMPLES)
+        "{sample}.vcf"
      output:
-       expand("{sample}.vcf.gz", sample=SAMPLES)
+       "{sample}.vcf.gz"
      shell:
          """
          bgzip -c {input} > {output}
@@ -25,9 +26,9 @@ rule bgzip:
 
 rule tabix:
      input:
-        vcf = expand("{sample}.vcf.gz", sample=SAMPLES)
+        "{sample}.vcf.gz"
      output:
-        expand("{sample}.vcf.gz.tbi", sample=SAMPLES)
+        "{sample}.vcf.gz.tbi"
      shell:
          """
          tabix -p vcf {input}
@@ -35,42 +36,50 @@ rule tabix:
 
 rule relatedness: 
      input: 
-        vcf = expand("{sample}.vcf", sample=SAMPLES)
-     log: "logs/relatedness.log" 
-     benchmark: "logs/relatedness.benchmark" 
+        "{sample}.vcf"
+     params: 
+        "{sample}"
      output: 
-        "out.log",
-        "out.relatedness" 
+        "{sample}.log",
+        "{sample}.relatedness" 
      shell:
          """
-         vcftools --gzvcf {input} --relatedness
+         vcftools --gzvcf {input} --relatedness --out {params} 
          """
-
 
 
 rule relatedness2:
      input:
-        vcf = expand("{sample}.vcf", sample=SAMPLES)
-     log: "logs/relatedness.log"
-     benchmark: "logs/relatedness.benchmark"
+        "{sample}.vcf"
+     params:
+        "{sample}"
      output:
-        "out.log",
-        "out.relatedness2"
+        "{sample}.log",
+        "{sample}.relatedness2"
      shell:
          """
-         vcftools --gzvcf {input} --relatedness2
+         vcftools --gzvcf {input} --relatedness2 --out {params}
          """
+
 
 rule ROH: 
      input:
-        vcf = expand("{sample}.vcf", sample=SAMPLES)
-     log: "logs/ROH.log"
-     benchmark: "logs/ROH.benchmark"
+        "{sample}.vcf"
      params: 
          G = config['G'],
          AF = config['AF']  
-     output: expand("{sample}.roh", sample=SAMPLES) 
+     output: "{sample}.roh" 
      shell:
         """     
 	bcftools roh -G{params.G} --AF-dflt {params.AF} {input} > {output}
+        """
+rule merge: 
+    input: 
+        vcf = expand("{sample}.vcf", sample=SAMPLES) 
+    output:
+        expand("{all}.vcf.gz", all = config['ALL'])
+    shell: 
         """ 
+        vcf-merge  {input} | bgzip -c > {output} 
+        """ 
+ 
