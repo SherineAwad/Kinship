@@ -6,7 +6,7 @@ Author: Sherine Awad
 VCF ToolBox  
 =======================================================================================
 
-This is a vcf toolbox for multiple things/commands to do with vcf. Like index, bgzip, merge, split, quick check for relatedness, Runs of Homozygozity (ROH), etc. 
+This is a vcf toolbox for multiple things/commands to do with vcf. Like index, bgzip, merge, split, quick check for relatedness, Runs of Homozygozity (ROH), VCF stats, ..etc. 
 
 Change the config.yaml file appropriately according to your data. 
 Update samples.tsv to include your samples. You can edit config file to change this name.  
