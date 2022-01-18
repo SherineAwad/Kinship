@@ -12,8 +12,8 @@ rule all:
            expand("{sample}.roh", sample=SAMPLES), 
            expand("{sample}.vcf.gz", sample=SAMPLES), 
            expand("{sample}.vcf.gz.tbi", sample=SAMPLES), 
-           expand("{all}.vcf.gz", all = config['ALL'])
-
+           expand("{all}.vcf.gz", all = config['ALL']), 
+           expand("{sample}.stats", sample=SAMPLES)
 rule bgzip:       
      input:
         "{sample}.vcf"
@@ -82,4 +82,13 @@ rule merge:
         """ 
         vcf-merge  {input} | bgzip -c > {output} 
         """ 
- 
+
+rule stats: 
+   input:
+        "{sample}.vcf.gz"
+   output:
+        "{sample}.stats"
+   shell: 
+      """ 
+      vcf-stats {input} > {output} 
+      """  
