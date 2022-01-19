@@ -82,6 +82,10 @@ rule kinship:
        "{sample}.kin"
    shell:
       """
-      king -b {input[0]} --fam {input[1]} --bim {input[2]} --related --kinship, --ibdseg, --ibs, --homog  
+      king -b {input[0]} --fam {input[1]} --bim {input[2]} --related 
+      king -b {input[0]} --fam {input[1]} --bim {input[2]} --kinship 
+      king -b {input[0]} --fam {input[1]} --bim {input[2]} --ibdseg
+      king -b {input[0]} --fam {input[1]} --bim {input[2]} --ibs 
+      king -b {input[0]} --fam {input[1]} --bim {input[2]} --homog  
       mv king.kin {output}
       """
