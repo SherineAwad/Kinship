@@ -1,20 +1,15 @@
 configfile: "config.yaml"
 
-with open(config['SAMPLES']) as fp:
-    SAMPLES= fp.read().splitlines()
-print(SAMPLES)
-
+VCF = config['VCF']
 
 rule all:
       input:
-           expand("{sample}.relatedness",sample=SAMPLES),
-           expand("{sample}.relatedness2", sample=SAMPLES),
-           expand("{sample}.roh", sample=SAMPLES), 
-           expand("{sample}.vcf.gz", sample=SAMPLES), 
-           expand("{sample}.vcf.gz.tbi", sample=SAMPLES), 
-           expand("{all}.vcf.gz", all = config['ALL']), 
-           expand("{sample}.stats", sample=SAMPLES),
-           expand("{sample}.validated", sample=SAMPLES)
+           expand("{sample}.vcf.gz", sample=VCF),
+           expand("{sample}.vcf.gz.tbi", sample=VCF),
+           expand("{sample}.relatedness",sample=VCF),
+           expand("{sample}.relatedness2", sample=VCF),
+           expand("{sample}.bed", sample = VCF),
+           expand("{sample}.kin", sample = VCF)
 rule bgzip:       
      input:
         "{sample}.vcf"
@@ -37,7 +32,7 @@ rule tabix:
 
 rule relatedness: 
      input: 
-        "{sample}.vcf"
+        "{sample}.vcf.gz"
      params: 
         "{sample}"
      output: 
@@ -51,7 +46,7 @@ rule relatedness:
 
 rule relatedness2:
      input:
-        "{sample}.vcf"
+        "{sample}.vcf.gz"
      params:
         "{sample}"
      output:
@@ -62,46 +57,31 @@ rule relatedness2:
          vcftools --gzvcf {input} --relatedness2 --out {params}
          """
 
-
-rule ROH: 
-     input:
-        "{sample}.vcf"
-     params: 
-         G = config['G'],
-         AF = config['AF']  
-     output: "{sample}.roh" 
-     shell:
-        """     
-	bcftools roh -G{params.G} --AF-dflt {params.AF} {input} > {output}
-        """
-rule merge: 
-    input: 
-        vcf = expand("{sample}.vcf.gz", sample=SAMPLES) 
-    output:
-        expand("{all}.vcf.gz", all = config['ALL'])
-    shell: 
-        """ 
-        vcf-merge  {input} | bgzip -c > {output} 
-        """ 
-
-rule stats: 
+rule makebed: 
    input:
         "{sample}.vcf.gz"
    output:
-        "{sample}.stats"
-   shell: 
-      """ 
-      vcf-stats {input} > {output} 
-      """
-
-
-rule validate:
-   input:
-        "{sample}.vcf.gz"
-   output:
-        "{sample}.validated"
+       "{sample}.bed",
+       "{sample}.fam",
+       "{sample}.bim"
+   params: 
+      vcf = VCF 
    shell:
       """
-      vcf-validator {input} > {output}
+      plink --vcf {input} --make-bed --out {params} 
       """
 
+rule kinship:
+   input:
+        "{sample}.bed", 
+        "{sample}.fam",
+        "{sample}.bim"
+   params: 
+       vcf = VCF
+   output:
+       "{sample}.kin"
+   shell:
+      """
+      king -b {input[0]} --fam {input[1]} --bim {input[2]} --related --kinship, --ibdseg, --ibs, --homog  
+      mv king.kin {output}
+      """

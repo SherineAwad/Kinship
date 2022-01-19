@@ -1,4 +1,3 @@
-SAMPLES : samples.tsv 
-ALL: all
+VCF: chr15
 AF: 0.4 
 G: 30 
