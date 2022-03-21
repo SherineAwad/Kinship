@@ -1,15 +1,98 @@
 configfile: "config.yaml"
 
-VCF = config['VCF']
+SAMPLES = config['SAMPLES']
 
 rule all:
       input:
-           expand("{sample}.vcf.gz", sample=VCF),
-           expand("{sample}.vcf.gz.tbi", sample=VCF),
-           expand("{sample}.relatedness",sample=VCF),
-           expand("{sample}.relatedness2", sample=VCF),
-           expand("{sample}.bed", sample = VCF),
-           expand("{sample}.kin", sample = VCF)
+           expand("{vcf}.vcf.gz", vcf=config['VCF']),
+           expand("{vcf}.vcf.gz.tbi", vcf=config['VCF']),
+           expand("{vcf}.relatedness",vcf=config['VCF']),
+           expand("{vcf}.relatedness2", vcf=config['VCF']),
+           expand("{vcf}.bed", vcf = config['VCF']),
+           expand("{vcf}.kin", vcf = config['VCF'])
+
+
+if config['PAIRED']:
+    rule trim:
+       input:
+           r1 = "{sample}.r_1.fq.gz",
+           r2 = "{sample}.r_2.fq.gz"
+       output:
+           "galore/{sample}.r_1_val_1.fq.gz",
+           "galore/{sample}.r_2_val_2.fq.gz"
+       conda: 'env/env-trim.yaml'
+       shell:
+           """
+           mkdir -p galore
+           mkdir -p fastqc
+           trim_galore --gzip --retain_unpaired --trim1 --fastqc --fastqc_args "--outdir fastqc" -o galore --paired {input.r1} {input.r2}
+           """
+    rule tosam:
+        input:
+            genome = config['GENOME'],
+            r1 = "galore/{sample}.r_1_val_1.fq.gz",
+            r2 = "galore/{sample}.r_2_val_2.fq.gz"
+        output:
+            '{sample}.sam'
+        conda: 'env/env-align.yaml'
+        shell:
+            "bwa mem {input.genome} {input.r1} {input.r2} > {output}"
+else:
+     rule trim:
+       input:
+           "{sample}.trimmed.fq.gz",
+       output:
+           "galore/{sample}_trimmed.fq.gz",
+       conda: 'env/env-trim.yaml'
+       shell:
+           """
+           mkdir -p galore
+           mkdir -p fastqc
+           trim_galore --gzip --retain_unpaired --trim1 --fastqc --fastqc_args "--outdir fastqc" -o galore {input}
+           """
+     rule tosam:
+        input:
+           "galore/{sample}_trimmed.fq.gz"
+        output:
+            '{sample}.sam'
+        conda: 'env/env-align.yaml'
+        shell:
+           "bwa mem {input.genome} {input} > {output}"
+
+rule sam_bam:
+    input:
+        "{sample}.sam"
+    output:
+        "{sample}.bam"
+    shell:
+         """
+         samtools view -S -b {input} > {output}
+         samtools index {input}
+         """
+rule tobcf: 
+    input: 
+       "{sample}.bam"
+    output: 
+       "{sample}.bcf" 
+    params: 
+       expand("{genome}.fasta", genome = config['GENOME'])
+    shell: 
+       """ 
+       bcftools mpileup --fasta-ref {params} {input} -d 10000 | bcftools call -vcO v -o {output} 
+       """
+
+rule vcf:
+    input:
+        expand("{genome}.fasta", genome = config['GENOME']),
+    params:
+         I =  lambda w: " -Ou " +" ".join(expand("{sample}.bam", sample =config['SAMPLES']))
+    output:
+        expand("{cohort}.vcf",  cohort=config['VCF'])
+    shell:
+        """
+        bcftools mpileup --fasta-ref {input} {params.I} -d 10000 --threads 10 | bcftools call -vcO v -o {output}
+        """
+ 
 rule bgzip:       
      input:
         "{sample}.vcf"
@@ -65,7 +148,7 @@ rule makebed:
        "{sample}.fam",
        "{sample}.bim"
    params: 
-      vcf = VCF 
+      vcf = SAMPLES 
    shell:
       """
       plink --vcf {input} --make-bed --out {params} 
@@ -77,7 +160,7 @@ rule kinship:
         "{sample}.fam",
         "{sample}.bim"
    params: 
-       vcf = VCF
+       vcf = SAMPLES
    output:
        "{sample}.kin"
    shell:
@@ -89,3 +172,24 @@ rule kinship:
       king -b {input[0]} --fam {input[1]} --bim {input[2]} --homog  
       mv king.kin {output}
       """
+rule get_phased: 
+   output: 
+       "1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf", 
+       "1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf.idx"
+   shell: 
+      """
+      wget wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf
+      wget wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf.idx
+
+      """  
+       
+rule akt_kinship: 
+   input: 
+       "{sample}.bcf", 
+       "1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf" 
+   output: 
+       "{sample}.kinship.txt" 
+   shell: 
+       """
+       kin -R {input[1]} -M 1 {input[0]} > {output} 
+       """ 
