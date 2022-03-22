@@ -4,13 +4,15 @@ SAMPLES = config['SAMPLES']
 
 rule all:
       input:
+           expand("{sample}.bam", sample =config['SAMPLES']),
+           expand("{cohort}.vcf", cohort=config['VCF']),
            expand("{vcf}.vcf.gz", vcf=config['VCF']),
            expand("{vcf}.vcf.gz.tbi", vcf=config['VCF']),
            expand("{vcf}.relatedness",vcf=config['VCF']),
            expand("{vcf}.relatedness2", vcf=config['VCF']),
            expand("{vcf}.bed", vcf = config['VCF']),
-           expand("{vcf}.kin", vcf = config['VCF'])
-
+           expand("{vcf}.kin", vcf = config['VCF']),
+           expand("{sample}.kinship.txt", sample =config['SAMPLES'])
 
 if config['PAIRED']:
     rule trim:
@@ -29,7 +31,7 @@ if config['PAIRED']:
            """
     rule tosam:
         input:
-            genome = config['GENOME'],
+            genome =expand("{genome}.fasta", genome = config['GENOME']),
             r1 = "galore/{sample}.r_1_val_1.fq.gz",
             r2 = "galore/{sample}.r_2_val_2.fq.gz"
         output:
@@ -52,12 +54,14 @@ else:
            """
      rule tosam:
         input:
-           "galore/{sample}_trimmed.fq.gz"
+           genome =expand("{genome}.fasta", genome = config['GENOME']),
+           reads = "galore/{sample}_trimmed.fq.gz"
+        
         output:
             '{sample}.sam'
         conda: 'env/env-align.yaml'
         shell:
-           "bwa mem {input.genome} {input} > {output}"
+           "bwa mem {input.genome} {input.reads} > {output}"
 
 rule sam_bam:
     input:
@@ -69,6 +73,7 @@ rule sam_bam:
          samtools view -S -b {input} > {output}
          samtools index {input}
          """
+
 rule tobcf: 
     input: 
        "{sample}.bam"
@@ -191,5 +196,5 @@ rule akt_kinship:
        "{sample}.kinship.txt" 
    shell: 
        """
-       kin -R {input[1]} -M 1 {input[0]} > {output} 
+       akt kin -R {input[1]} -M 1 {input[0]} > {output} 
        """ 
