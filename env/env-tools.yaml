@@ -1,0 +1,9 @@
+# conda environment configuration for snakemake --use-conda
+channels:
+    - bioconda
+    - defaults
+
+dependencies:
+    - samtools=1.15
+    - bcftools=1.15
+    - vcftools=0.1.16

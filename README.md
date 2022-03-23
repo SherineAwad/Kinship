@@ -9,19 +9,29 @@ Kinship and Relatedness
 Various ways to check kinship, relatedness, IBS, and IBS. 
 
 Change the config.yaml file appropriately according to your data. 
-Update samples.tsv to include your samples. You can edit config file to change this name.  
+
+Update SAMPLES in config file to include your samples. The pipeline uses vctfools, King, and AKT. More tools will be added.   
+
+A sample name is included in the config file without the suffix 'r_1.fq.gz' or 'r_2.fq.gz' if paired end and without 'fq.gz' if single-end reads. 
 
 
-Then run: snakemake -jnumber_of_cores, for example for 5 cores use:
+### How to run the pipeline 
+The pipeline requires snakemake and conda installed. 
+
+Then you use: 
+
+    snakemake -jnumber_of_core
+
+For example for 5 cores use:
 
     snakemake -j5 
 
-and for a dry run use: 
+For a dry run use: 
 
     snakemake -j1 -n 
 
 
-and to print the commands in a dry run use:
+To print the commands in a dry run use:
 
     snakemake -j1 -n -p 
 

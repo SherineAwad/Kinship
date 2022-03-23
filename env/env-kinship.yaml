@@ -1,0 +1,9 @@
+# conda environment configuration for snakemake --use-conda
+channels:
+    - bioconda
+    - defaults
+
+dependencies:
+    - akt=0.3.3
+    - king=2.2.4
+    - plink=1.90b6.21

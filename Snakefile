@@ -56,7 +56,7 @@ else:
         input:
            genome =expand("{genome}.fasta", genome = config['GENOME']),
            reads = "galore/{sample}_trimmed.fq.gz"
-        
+        conda: 'env/env-align.yaml' 
         output:
             '{sample}.sam'
         conda: 'env/env-align.yaml'
@@ -67,7 +67,8 @@ rule sam_bam:
     input:
         "{sample}.sam"
     output:
-        "{sample}.bam"
+        "{sample}.bam" 
+    conda: 'env/env-tools.yaml'  
     shell:
          """
          samtools view -S -b {input} > {output}
@@ -81,6 +82,7 @@ rule tobcf:
        "{sample}.bcf" 
     params: 
        expand("{genome}.fasta", genome = config['GENOME'])
+    conda: 'env/env-tools.yaml'
     shell: 
        """ 
        bcftools mpileup --fasta-ref {params} {input} -d 10000 | bcftools call -vcO v -o {output} 
@@ -88,21 +90,24 @@ rule tobcf:
 
 rule vcf:
     input:
-        expand("{genome}.fasta", genome = config['GENOME']),
+        genome = expand("{genome}.fasta", genome = config['GENOME']),
+        samples = expand("{sample}.bam", sample =config['SAMPLES'])
     params:
-         I =  lambda w: " -Ou " +" ".join(expand("{sample}.bam", sample =config['SAMPLES']))
+        I =  lambda w: " -Ou " +" ".join(expand("{sample}.bam", sample =config['SAMPLES']))
     output:
         expand("{cohort}.vcf",  cohort=config['VCF'])
+    conda: 'env/env-tools.yaml'
     shell:
         """
-        bcftools mpileup --fasta-ref {input} {params.I} -d 10000 --threads 10 | bcftools call -vcO v -o {output}
+        bcftools mpileup --fasta-ref {input.genome} {params.I} -d 10000 --threads 10 | bcftools call -vcO v -o {output}
         """
  
 rule bgzip:       
      input:
-        "{sample}.vcf"
+        "{cohort}.vcf"
      output:
-       "{sample}.vcf.gz"
+       "{cohort}.vcf.gz"
+     conda: 'env/env-htslib.yaml' 
      shell:
          """
          bgzip -c {input} > {output}
@@ -110,9 +115,10 @@ rule bgzip:
 
 rule tabix:
      input:
-        "{sample}.vcf.gz"
+        "{cohort}.vcf.gz"
      output:
-        "{sample}.vcf.gz.tbi"
+        "{cohort}.vcf.gz.tbi"
+     conda: 'env/env-htslib.yaml'
      shell:
          """
          tabix -p vcf {input}
@@ -120,12 +126,13 @@ rule tabix:
 
 rule relatedness: 
      input: 
-        "{sample}.vcf.gz"
+        "{cohort}.vcf.gz"
      params: 
-        "{sample}"
+        "{cohort}"
+     conda: 'env/env-tools.yaml'
      output: 
-        "{sample}.log",
-        "{sample}.relatedness" 
+        "{cohort}.log",
+        "{cohort}.relatedness" 
      shell:
          """
          vcftools --gzvcf {input} --relatedness --out {params} 
@@ -134,12 +141,13 @@ rule relatedness:
 
 rule relatedness2:
      input:
-        "{sample}.vcf.gz"
+        "{cohort}.vcf.gz"
      params:
-        "{sample}"
+        "{cohort}"
+     conda: 'env/env-tools.yaml'
      output:
-        "{sample}.log",
-        "{sample}.relatedness2"
+        "{cohort}.log",
+        "{cohort}.relatedness2"
      shell:
          """
          vcftools --gzvcf {input} --relatedness2 --out {params}
@@ -147,13 +155,13 @@ rule relatedness2:
 
 rule makebed: 
    input:
-        "{sample}.vcf.gz"
+        "{cohort}.vcf.gz"
    output:
-       "{sample}.bed",
-       "{sample}.fam",
-       "{sample}.bim"
+       "{cohort}.bed",
+       "{cohort}.fam",
+       "{cohort}.bim"
    params: 
-      vcf = SAMPLES 
+      vcf = "{cohort}" 
    shell:
       """
       plink --vcf {input} --make-bed --out {params} 
@@ -161,13 +169,14 @@ rule makebed:
 
 rule kinship:
    input:
-        "{sample}.bed", 
-        "{sample}.fam",
-        "{sample}.bim"
+        "{cohort}.bed", 
+        "{cohort}.fam",
+        "{cohort}.bim"
    params: 
-       vcf = SAMPLES
+       vcf = "{cohort}"
+   conda: 'env/env-kinship.yaml'
    output:
-       "{sample}.kin"
+       "{cohort}.kin"
    shell:
       """
       king -b {input[0]} --fam {input[1]} --bim {input[2]} --related 
@@ -193,7 +202,8 @@ rule akt_kinship:
        "{sample}.bcf", 
        "1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf" 
    output: 
-       "{sample}.kinship.txt" 
+       "{sample}.kinship.txt"
+   conda: 'env/env-kinship.yaml' 
    shell: 
        """
        akt kin -R {input[1]} -M 1 {input[0]} > {output} 
