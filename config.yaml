@@ -1,6 +1,4 @@
 SAMPLES: ['SLX-18968.UDP0031.HT3G5DMXX.s_2', 'SLX-18968.UDP0039.HT3G5DMXX.s_2']
-AF: 0.4 
-G: 30
 PAIRED: TRUE
 VCF: ALL
 GENOME: "../annotations/gatkresources/Homo_sapiens_assembly38" 
